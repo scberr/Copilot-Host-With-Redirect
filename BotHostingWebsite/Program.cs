@@ -27,22 +27,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddRazorPages()
     .AddMicrosoftIdentityUI();
 
-
-
 builder.Services.AddDownstreamApi("DownstreamApi", builder.Configuration.GetSection("DownstreamApi"));
-
-/*
-
-builder.Services.AddSingleton<IConfidentialClientApplication>(provider =>
-{
-    return ConfidentialClientApplicationBuilder.Create("25b71961-b251-4225-9e4a-1bfa22c65f8c")
-        .WithClientSecret("Hmb8Q~BFOxrE1u-kRaHvIFJMghCKEGpT4RWQOc6A")
-        .WithAuthority(new Uri("https://login.microsoftonline.com/1c070306-c795-4742-ad65-a40d44b872a5"))
-        .Build();
-});
-*/
-//builder.Services.AddControllersWithViews();
-
 
 var app = builder.Build();
 
