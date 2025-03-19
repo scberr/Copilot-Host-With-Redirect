@@ -1,0 +1,160 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<h2>Background</h2>
+<p>
+    This website demonstrates the <a href="https://github.com/microsoft/BotFramework-WebChat">Bot Framework Web Chat component</a> connected to a Copilot Studio Agent using Entra authentication without requiring an authentication pop up. This may be helpful in scenarios where popups aren&apos;t allowed
+</p>
+<p>
+    It is based on the <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/configure-sso">Configure single sign-on with Microsoft Entra ID</a> article from Microsoft Learn. Note that this article references the <a href="https://github.com/microsoft/CopilotStudioSamples/tree/legacy/BuildYourOwnCanvasSamples">BuildYourOwnCanvasSamples</a> sample from <a href="https://github.com/microsoft/CopilotStudioSamples">CopilotStudioSamples</a> on Github.
+</p>
+<h2>Dependencies and Setup Guide</h2>
+<p>
+    Read through the article <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/configure-sso">Configure single sign-on with Microsoft Entra ID</a> before setting this up. Making it work in your environment requires the following steps (more detail is in the article)
+</p>
+<h3>Step 1: Create Custom Agent in Copilot Studio</h3>
+<p>Create the agent in Copilot Studio. Instructions on configuring security will come later.</p>
+<h3>Step 2: Create an app registration in Microsoft Entra ID for your Copilot Studio Agent</h3>
+<p>This is referred to as <i>authentication app registration</i> In the article. Key points to ensure you cover:</p>
+<h4>Authentication Tab</h4>
+<ul>
+    <li>Redirect URL 1: https://europe.token.botframework.com/.auth/web/redirect</li>
+    <li>Redirect URL 2: https://token.botframework.com/.auth/web/redirect</li>
+    <li>Implicit and Hybrid Flows: both <i>Access Tokens</i> and <i>ID tokens</i></li>
+    <li>Supported Account Types: Accounts in any organizational directory</li>
+</ul>
+<p>
+See below image for an example:<br />
+<img src="~/img/copilot_appreg_authentication.png" width="800" class="border" />
+</p>
+<h4>API Permissions Tab</h4>
+Give the API the following permissions
+<ul>
+    <li>openid</li>
+    <li>profile</li>
+    <li>User.Read</li>
+</ul>
+<p>
+See below image for an example:
+<br />
+<img src="~/img/copilot_appreg_apiperm.png" width="800" class="border" />
+</p>
+<h4>Expose an API Tab</h4>
+<ol>
+    <li>Generate an Application ID URI</li>
+    <li>Create a scope (effectively a security permission) for using your Agent</li>
+</ol>
+<p>
+See below image for an example: <br />
+<img src="~/img/copilot_appreg_exposeapi.png" width="800" class="border" />
+</p>
+<h4>Owners Tab</h4>
+<p>
+    Make yourself an Owner of this app. This is needed to enable you to easily assign this permission in Step 4.
+</p>
+<h3>Step 3: Connect the App Registration to Copilot Agent</h3>
+<p>
+The next step is to connect the app registration we just created to the Agent from Step 1. This requires the following actions:
+</p>
+<ol>
+    <li>Open the Agent and navigate to Settings --> Security --> Authentication</li>
+    <li>Change authentication option to <i>custom</i></li>
+    <li>If the redirect Url isn't registered in the app you created in Step 2, add it</li>
+    <li>Enter the Client ID and Secret (create new secret if necessary) from the App you created in Step 2</li>
+    <li>Paste the <u>full URL </u> of the API you created in Step 2 --> Expose an API Tab. It will be in format (api://GUID/Permission)</li>
+    <li>Enter profile openid in the scopes section</li>
+    <li>Save</li>
+</ol>
+<h3>Step 4: Create an app registration in Microsoft Entra ID for this web app (the canvas)</h3>
+<p>
+    This website is the custom canvas. It will need its own app registration to be able to log in and access the Agent on behalf of the users. Configure each of the tabs accordingly
+</p>
+<h4>Authentication Tab</h4>
+<ul>
+    <li>Redirect URL for your development website root (e.g. https://localhost:7287)</li>
+    <li>Redirect URL for your development website webchat page (e.g. https://localhost:7287/Webchat)</li>
+    <li>Redirect URL for your development website oidc endpoint (e.g. https://localhost:7287/signin-oidc)</li>
+    <li>Implicit and Hybrid Flows: both <i>Access Tokens</i> and <i>ID tokens</i></li>
+    <li>Supported Account Types: Accounts in any organizational directory</li>
+</ul>
+<h4>API Permissions Tab</h4>
+<ul>
+    <li>Configured Permissions: add the the API you created in Step 2 --> Expose an API Tab. It will be in format (api://GUID/Permission)</li>
+    <li>Other Permissions: Microsoft Graph -> offline_access</li>
+    <li>Other Permissions: Microsoft Graph -> openid</li>
+    <li>Other Permissions: Microsoft Graph -> profile</li>
+    <li>Other Permissions: Microsoft Graph -> User.Read</li>
+    <li>Grant Admin Consent for all items</li>
+</ul>
+<p>
+    See below image for an example: <br />
+    <img src="~/img/canvas_appreg_apiperm.png" width="800" class="border" />
+</p>
+<p>
+
+</p>
+<h3>Step 5: Connect this website to the App Registration you created in Step 4</h3>
+<p>
+    This website is the custom canvas. It will need its own app registration to be able to log in and access the Agent on behalf of the users. Configure each of the tabs accordingly
+</p>
+<h4>Edit appsettings.json</h4>
+<p>Change the following values under AzureAd to your tenant and the App Registration you created in Step 4</p>
+<ul>
+    <li>Domain</li>
+    <li>TenantId</li>
+    <li>Client ID</li>
+</ul>
+
+<h4>Search and Replace</h4>
+<p>Change the following values under DownstreamApi to the App Registration values you created in Step 2</p>
+<ul>
+    <li>Base Url - <u>to the Application ID URI from Step 2 --> Expose an API</u></li>
+    <li>Scopes - <u>to the custom scope you created in Step 2 --> Expose an API e.g. SampleBot.CallBot</u></li>
+    <li>Scopes (default) - <u>to a default value for the custom scope you created in Step 2 --> Expose an API e.g. SampleBot.CallBot/.default</u></li>
+    <li>Client ID</li>
+</ul>
+<p>
+    Search and replace all instances of api://ac889341-279e-4cb6-a3b0-308332866925/SampleBot.Use to the api you created in Step 2 --> Expose an API. Note that AuthorizeForScopes attribute is used to trigger the authentication when users access the website. Affected files are:
+</p>
+<ul>
+    <li>Index.cshtml.cs</li>
+    <li>WebChat.cshtml <i>inside javascript</i></li>
+    <li>WebChat.cshtml.cs</li>
+</ul>
+<h4>Edit WebChat.cshtml JavaScript</h4>
+<p>
+    Next, edit the following values in web WebChat.cshtml <br />
+    var theURL = '' <br />
+    Replace this with the Token Endpoint value from your Copilot Studio Agent. Top find it, open your Agent and navigate to --> Channels --> Mobile.
+    </p>
+    <p>
+        <img src="~/img/copilot_channels_mobile.png" width="300" class="border" />
+    </p>
+    <p>Then copy the Token Endpoint value</p>
+    <p>
+        <img src="~/img/copilot_channels_mobile_open.png" width="400" class="border" />
+    </p>
+<p>
+    Within this Javascript code block inside the file, replace the client ID and Tenant ID values with app registration setting from Step 4:<br />
+    auth: {<br />
+    clientId: 'CLIENT_ID_FROM_CUSTOM_WEBSITE',<br />
+    authority: 'https://login.microsoftonline.com/YOUR_TENANT_ID'<br />
+    },<br />
+
+
+</p>
+<h2>Testing</h2>
+<p>
+    The App should be ready for testing.
+</p>
+<p>
+    <a href="/Webchat">Click here to test the chat widget</a>
+</p>
+
+
+@section Scripts
+{
+}
